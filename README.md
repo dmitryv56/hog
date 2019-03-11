@@ -1,0 +1,2 @@
+# hog
+histogram oriented gradient
