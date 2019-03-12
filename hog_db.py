@@ -67,7 +67,7 @@ class blmFilter(object):
 
     """
 
-    def __init__(self, file_log_handler):
+    def __init__(self,  file_log_handler):
 
         self._dict = {"blm_size": None,
                       "blm_hashes": None,
@@ -76,23 +76,28 @@ class blmFilter(object):
 
         self._flog = file_log_handler
 
+
     def set_blm(self, filter_name, size, hash_count, byte_str):
         self._dict["blm_size"] = size
         self._dict["blm_hashes"] = hash_count
         self._dict["blm_bystr"] = byte_str     # byte_str is a string contains hex value of nibbles
         self._dict["blm_name"] = filter_name
 
+        sMsg ="bloom filter  data that is addding to DB "
+
         if DBG_PRINT:
-            print("bloom filter  data that is addding to DB ")
+            print("{}".format(sMsg))
 
         if self._flog:
-            print('bloom filter  data that is addind to DB ', file=self._flog)
+            print("{}".format(sMsg), file = self._flog )
+
+
         for key in self._dict:
             if DBG_PRINT:
-                print("{}: {}".format(key, self._dict[key]))
+                print("{}: {}".format(key, self._dict[key]) )
 
             if self._flog:
-                print("{}: {}".format(key, self._dict[key]), file=self._flog)
+                print("{}: {}".format(key, self._dict[key]), file=self._flog )
 
     def get_dict(self):
         return self._dict
@@ -484,7 +489,7 @@ class hogDB(object):
             cursor = cnx.cursor()
 
             update_sql1 = update_sql.encode(encoding='UTF-8', errors='strict')
-            update_data1 = update_data.encode(encoding='UTF-8', errors='strict')
+            update_data1 = update_data
             cursor.execute(update_sql1, update_data1)
 
             cursor.close()

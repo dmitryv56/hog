@@ -110,11 +110,25 @@ class hog_statest(hog):
 
         return self._hash32
 
+
+    def _ftr_vect2string(self):
+        """
+        creates str for feature vector and creates 32 bit hash for feature vector
+        :return:
+        """
+
+        self._str_fvect = hog.vec2hexstr(8, self._final_fvect)
+        self.get_hash32()
+
+
+
+
+
     def _save_fvect(self):
 
         try:
-            self._str_fvect = hog.vec2hexstr(8, self._final_fvect)
-            self.get_hash32()
+            #self._str_fvect = hog.vec2hexstr(8, self._final_fvect)
+            #self.get_hash32()
             self._imgFeature.set_feature(self._name, self._image_file, self._str_fvect, self._hash32 )
             self._db.add_feature(self._imgFeature.get_dict())
         except Exception as e:
@@ -182,6 +196,7 @@ def main(arglist):
     _path_base = arglist[4]
     _N_IMAGES = arglist[5]
     _PB = arglist[6]
+    _TRUST='trustless'
 
     # _host = "10.137.137.40"
     # _database = "imgTest"
@@ -189,7 +204,7 @@ def main(arglist):
 
     # set Bloom filter
 
-    _blmFilterDB = blmFilter(f)
+    _blmFilterDB = blmFilter( f)
 
     if _blmFilterDB.existindb(db, _NAME):  # exists in DB
 

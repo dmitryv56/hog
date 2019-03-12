@@ -75,6 +75,7 @@ def parseCMD(arglist, file_log=None, dbg_prn=None):
         _path_base = arglist[4]
         _N_IMAGES = arglist[5]
         _PB = arglist[6]
+        _TRUST = arglist[7]    # 'trust' or 'trustless'
 
     except Exception as e:
         print("### Exception in {} : {}".format(_fname, e))
@@ -85,12 +86,13 @@ def parseCMD(arglist, file_log=None, dbg_prn=None):
         _NAME = None
         _path_base = None
         _PB = None
+        _TRUST='trustless'
 
     finally:
         if dbg_prn:
             print("##### Function ...{} finished\n".format(_fname))
 
-    return _host, _database, _NAME, _path_base, _N_IMAGES, _PB
+    return _host, _database, _NAME, _path_base, _N_IMAGES, _PB, _TRUST
 
 
 def init_DB(_host, _database, file_log=None, dbg_prn=None):
@@ -114,7 +116,7 @@ def init_DB(_host, _database, file_log=None, dbg_prn=None):
     return _db
 
 
-def init_BloomFilter(_nameBloomFilter, _db, _n_images, _pb, file_log=None, dbg_prn=None):
+def init_BloomFilter(_nameBloomFilter, _db, _n_images, _pb,  file_log=None, dbg_prn=None):
     """
 
     :param _nameBloomFilter:
@@ -122,18 +124,23 @@ def init_BloomFilter(_nameBloomFilter, _db, _n_images, _pb, file_log=None, dbg_p
     :param _n_images:
     :param _pb:
     :param file_log:
+    :param dbg_prn:
     :return:
     """
 
     _fname = init_BloomFilter.__name__
     if dbg_prn:
         print("##### Function ...{} started".format(_fname))
+
+    f =file_log
+
     try:
         _NAME = _nameBloomFilter
         _N_IMAGES = _n_images
         _PB = _pb
 
-        _blmFilterDB = blmFilter(f)  # interface to table 'blmFilter' in 'imgTest' database
+
+        _blmFilterDB = blmFilter( file_log )  # interface to table 'blmFilter' in 'imgTest' database
 
         if _blmFilterDB.existindb(_db, _NAME):  # exists in DB
 
@@ -148,6 +155,7 @@ def init_BloomFilter(_nameBloomFilter, _db, _n_images, _pb, file_log=None, dbg_p
         else:  # new, it should be added to DB
 
             _blmFilter = BloomFilter(_N_IMAGES, _PB, f)  # type: object
+
 
             _, _, blm_bystr = _blmFilter._filter_array_for_storing()
 
@@ -267,7 +275,41 @@ def img_iteration(_host, _database,  number_of_images, train_images, _blmFilter,
             fimage = hog_statest(fname, 64, 128, _host, _database, file_log )
             try:
                 fimage._run()
-                fimage._save_fvect()
+                fimage._ftr_vect2string()
+
+                should_be_added =  _blmFilter._add( fimage._str_fvect )
+
+                if should_be_added :
+                    fimage._save_fvect()
+                    added_to_filter += 1
+
+                    if dbg_prn:
+                        print("******** The feature vector for {}  added to Bloom filter data".format(fname))
+                    if file_log:
+                        print("******** The feature vector for {}  added to Bloom filter data".format(fname),
+                              file=file_log)
+                else:
+                    if _blmFilter.trust_or_trustless == 'trust':
+
+                        existed_in_filter += 1
+                        if dbg_prn:
+                            print("******** The feature vector for {}  exists  in Bloom filter data".format(fname))
+                        if file_log:
+                            print("The feature vector for {}  exists  in Bloom filter data".format(fname), file=file_log)
+
+                        imgFeature = fimage.getimgFeature()
+                        img_dict = imgFeature.get_dict()
+                        existed_dict.update({img_dict["ftr_name"]: img_dict["ftr_hval"]})
+                    else:
+                        fimage._save_fvect()
+                        added_to_filter += 1
+                        if dbg_prn:
+                            print("******** Trustless strategy: the feature vector for {}  added to Bloom filter data".format(fname))
+                        if file_log:
+                            print("******** Trustless strategy: the feature vector for {}  added to Bloom filter data".format(fname),
+                                  file=file_log)
+
+
 
             except Exception as e:
                 print("### Exception on image {}".format(fname))
@@ -277,27 +319,9 @@ def img_iteration(_host, _database,  number_of_images, train_images, _blmFilter,
                 del fimage
                 continue
 
-            if _blmFilter._add(fimage._str_fvect):
-                if dbg_prn:
-                    print("******** The feature vector for {}  added to Bloom filter data".format(fname))
-                if file_log:
-                    print("******** The feature vector for {}  added to Bloom filter data".format(fname), file=file_log)
-                added_to_filter = added_to_filter + 1
-            else:
-                if dbg_prn:
-                    print("******** The feature vector for {}  exists  in Bloom filter data".format(fname))
-                if file_log:
-                    print("The feature vector for {}  exists  in Bloom filter data".format(fname), file=file_log )
-
-                existed_in_filter = existed_in_filter + 1
-
-                imgFeature = fimage.getimgFeature()
-                img_dict=imgFeature.get_dict()
-                existed_dict.update( { img_dict["ftr_name"] : img_dict["ftr_hval"] })
-
             del fimage
-            #if image_count % 10 == 0:  # save bitarray
-            if image_count % 2 == 0:    # save bitarray
+
+            if image_count % 10  == 0:    # save bitarray
 
 
                 _, _, blm_str = _blmFilter._filter_array_for_storing()
@@ -373,7 +397,7 @@ def main(arglist, f, dbg_prn):
     :return:
     """
 
-    _host, _database, _NAME, _path_base, _N_IMAGES, _PB = parseCMD(arglist, f, dbg_prn)
+    _host, _database, _NAME, _path_base, _N_IMAGES, _PB, _TRUST = parseCMD(arglist, f, dbg_prn)
     if _host is None or _database is None or _path_base is None:
         exit_with_code(-99, f, dbg_prn)
 
@@ -390,6 +414,7 @@ def main(arglist, f, dbg_prn):
 
     if _blmFilter is None or _blmFilterDB is None:
         exit_with_code(-2, f, dbg_prn)
+    _blmFilter.trust_or_trustless = _TRUST
 
     blm_name, blm_size, blm_hashes, blm_bystr = get_FilterProperties(db, _NAME, f, dbg_prn)
 

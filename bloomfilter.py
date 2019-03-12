@@ -141,6 +141,7 @@ class BloomFilter(object):
             self._bit_array = bitarray( self._size )
             self._bit_array.setall( 0 )
 
+        self.trust_or_trustless = 'trustless'
 
     def get_size(self):
         return self._size
@@ -157,7 +158,7 @@ class BloomFilter(object):
         :param item:
         :return:
         """
-        _added = False
+        _should_be_added = False
         digests = []
         for i in range(self._hash_count):
             # create digest for given item
@@ -172,9 +173,9 @@ class BloomFilter(object):
                 continue
 
             self._bit_array[digest] = True
-            _added = True
+            _should_be_added = True
 
-        return _added
+        return _should_be_added
 
 
     def _check(self, item):
