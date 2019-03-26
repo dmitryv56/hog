@@ -178,7 +178,7 @@ def hash32_calc( fvect, size_fvect, file_log_handler ):
 
 def main(arglist):
     """
-    flow for add feature vector of the image to DB
+    flow for adding the feature vector of the image to DB
     :param arglist:
     :return:
     """

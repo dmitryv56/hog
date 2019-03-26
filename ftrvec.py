@@ -53,6 +53,19 @@ def exit_with_code(code, file_log=None, dbg_prn = None):
 
 
 def parseCMD(arglist, file_log=None, dbg_prn=None):
+    """
+
+    :param arglist:
+             host,
+             database,
+             name of data chunck in DB,
+             path to images,
+             number of images max and false probability are using for Bloom filter configuration
+             trust parameter for Bloom filter
+    :param file_log:  handler for log file
+    :param dbg_prn:  debug prints
+    :return:
+    """
     _fname = parseCMD.__name__
     if dbg_prn:
         print("##### Function ...{} started".format(_fname))
@@ -392,12 +405,14 @@ def img_iteration(_host, _database,  number_of_images, train_images, _blmFilter,
 
 def main(arglist, f, dbg_prn):
     """
-    flow for add feature vector of the image to DB
+    flow for adding the feature vector of the image to DB
     :param arglist:
     :return:
     """
 
-    _host, _database, _NAME, _path_base, _N_IMAGES, _PB, _TRUST = parseCMD(arglist, f, dbg_prn)
+    _host, _database, _NAME, _path_base, _N_IMAGES, _PB, _TRUST = parseCMD( arglist, f, dbg_prn )
+
+
     if _host is None or _database is None or _path_base is None:
         exit_with_code(-99, f, dbg_prn)
 
@@ -409,33 +424,59 @@ def main(arglist, f, dbg_prn):
         exit_with_code(-1, f, dbg_prn)
 
     # set Bloom filter
+    try:
 
-    _blmFilter, _blmFilterDB = init_BloomFilter(_NAME, db, _N_IMAGES, _PB, f, dbg_prn)
+        _blmFilter, _blmFilterDB = init_BloomFilter(_NAME, db, _N_IMAGES, _PB, f, dbg_prn)
 
-    if _blmFilter is None or _blmFilterDB is None:
-        exit_with_code(-2, f, dbg_prn)
-    _blmFilter.trust_or_trustless = _TRUST
+        if _blmFilter is None or _blmFilterDB is None:
+            exit_with_code(-2, f, dbg_prn)
 
-    blm_name, blm_size, blm_hashes, blm_bystr = get_FilterProperties(db, _NAME, f, dbg_prn)
+        #set Bloom filter behavior
+
+        _blmFilter.trust_or_trustless = _TRUST
+
+        blm_name, blm_size, blm_hashes, blm_bystr = get_FilterProperties(db, _NAME, f, dbg_prn)
+
+    except Exception as e:
+        print("### Exception in main : {}".format(e))
+        if f:
+            print("### Exception in main : {}".format(e), file=f)
+
+        exit_with_code(-95, f, dbg_prn)
+
 
 
     train_images = list_img_files(_path_base)
+
     number_of_images = len(train_images)
 
     number_of_images, train_images = get_img_list(_path_base, f, dbg_prn )
 
     if number_of_images == 0:
-        return 0
+        print("The image folder is empty : {}".format(number_of_images))
+        if f:
+            print("The image folder is empty : {}".format(number_of_images), file=f)
 
-    img_iteration(_host, _database, number_of_images, train_images, _blmFilter, _blmFilterDB, _NAME, f,dbg_prn)
+        del _blmFilter
+        del _blmFilterDB
+        exit_with_code(-50, f, dbg_prn)
 
 
 
+    try:
 
+        img_iteration( _host, _database,  number_of_images,  train_images,  _blmFilter,  _blmFilterDB,  _NAME, f, dbg_prn)
 
+    except Exception as e:
+        print("### Exception in main : {}".format( e))
+        if f:
+            print("### Exception in main : {}".format( e), file=f )
 
-    del _blmFilter
-    del _blmFilterDB
+        exit_with_code(-98, f, dbg_prn)
+    finally:
+
+        del _blmFilter
+        del _blmFilterDB
 
 
 
