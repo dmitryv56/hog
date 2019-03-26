@@ -298,6 +298,75 @@ class hogDB(object):
             pass
         return blm_id
 
+    def get_ftrVect(self, ftr_id):
+
+        ftr_value = None
+
+        select_cmd = (
+            "SELECT ftr_value FROM features WHERE ftr_id = %s " % ftr_id )
+        select_data = ()
+
+        if DBG_PRINT:
+            print("ftr_value select {}\n ".format(select_cmd))
+
+        if self._flog:
+            print("ftr_value select {}\n ".format(select_cmd), file = self._flog )
+
+        try:
+
+            result = self.__select_sql__(select_cmd, select_data)
+            ( ftr_value ) = result[0]
+
+        except Exception as e:
+            if DBG_PRINT:
+                print("select exception: {}".format(e))
+
+            if self._flog:
+                print("select exception: {}".format(e), file=self._flog)
+        finally:
+            if ftr_value:
+                if DBG_PRINT:
+                    print("ftr_value is\n {} ".format( ftr_value ))
+
+                if self._flog:
+                    print("ftr_value is\n {} ".format(ftr_value), file =self._flog )
+
+        return ftr_value
+
+    def get_all_ids( self ):
+
+        ftr_id_list=[]
+        select_cmd = ("SELECT ftr_id FROM features ")
+        select_data = ()
+
+        if DBG_PRINT:
+            print("ftr_id  select {}\n ".format(select_cmd))
+
+        if self._flog:
+            print("ftr_id select {}\n ".format(select_cmd), file = self._flog )
+
+        try:
+
+            result = self.__select_sql__(select_cmd, select_data)
+            for i in range( len(result)):
+                ftr_id_list.append( result[i ] )
+
+        except Exception as e:
+            if DBG_PRINT:
+                print("select exception: {}".format(e))
+
+            if self._flog:
+                print("select exception: {}".format(e), file=self._flog)
+        finally:
+            if len( ftr_id_list ) >0 :
+                if DBG_PRINT:
+                    print("ftr_id is\n {} ... ".format( ftr_id_list[0]  ))
+
+                if self._flog:
+                    print("ftr_id list  is\n {} ".format(ftr_id_list), file =self._flog )
+
+        return ftr_value
+
     def get_blmFilter(self, blm_name):
 
         select_cmd = (
