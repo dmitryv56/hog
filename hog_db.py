@@ -19,7 +19,7 @@ import datetime
 
 LOG_FILE = ''.join(["db_ftrVect", datetime.datetime.now().strftime("_%H%M%S_"), uuid.uuid1().hex, ".log"])
 f = None  # output file
-DBG_PRINT = True
+DBG_PRINT = False
 """
 The feature data is presented  as a dictionary with keyes 'ftr_name', 'ftr_file','ftr_value' 
 """
@@ -298,6 +298,44 @@ class hogDB(object):
             pass
         return blm_id
 
+
+    def get_feature_row(self, ftr_id):
+        ftr_name = None
+        ftr_hval = None
+        ftr_file = None
+
+        select_cmd = ( "SELECT  ftr_id, ftr_name,ftr_hval,ftr_file, ftr_value  FROM features WHERE ftr_id = %s " % ftr_id )
+
+        select_data = ()
+        if DBG_PRINT:
+            print("feature row select {}\n ".format(select_cmd))
+
+        if self._flog:
+            print("feature row  select {}\n ".format(select_cmd), file = self._flog )
+
+        try:
+
+            result = self.__select_sql__(select_cmd, select_data)
+            ( ftr_id, ftr_name , ftr_hval, ftr_file, ftr_value ) = result[0]
+
+
+        except Exception as e:
+            if DBG_PRINT:
+                print("select exception: {}".format(e))
+
+            if self._flog:
+                print("select exception: {}".format(e), file=self._flog)
+        finally:
+            if ftr_name:
+                if DBG_PRINT:
+                    print("ftr_name is {} ftr_hval is {} frt_file is {}".format( ftr_name, ftr_hval, ftr_file ) )
+
+                if self._flog:
+                    print("ftr_name is {} ftr_hval is {} frt_file is {}".format(ftr_name, ftr_hval, ftr_file), file =self._flog )
+
+        return ftr_id, ftr_name, ftr_hval, ftr_file, ftr_value
+
+
     def get_ftrVect(self, ftr_id):
 
         ftr_value = None
@@ -365,7 +403,7 @@ class hogDB(object):
                 if self._flog:
                     print("ftr_id list  is\n {} ".format(ftr_id_list), file =self._flog )
 
-        return ftr_value
+        return ftr_id_list
 
     def get_blmFilter(self, blm_name):
 
