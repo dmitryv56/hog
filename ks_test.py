@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+"""
+Kolmogorov-Smirnov statistic goes fit to quantify a distance between the empirical distribution functions of two samples.
+This is used for two feature vectors matching
+"""
+
 import sys
 from scipy.stats import ks_2samp
 import numpy as np
